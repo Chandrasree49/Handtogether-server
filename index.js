@@ -57,6 +57,28 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
 });
+app.put("/events/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).send({ message: "Invalid ID" });
+    }
+    const updatedData = req.body;
+    const filter = { _id: new ObjectId(id) };
+    const updateDoc = {
+      $set: {
+        title: updatedData.title,
+        location: updatedData.location,
+        eventDate: updatedData.eventDate,
+        description: updatedData.description,
+      },
+    };
+    const result = await eventsCollection.updateOne(filter, updateDoc);
+    res.send(result);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
 app.delete("/events/:id", async (req, res) => {
   try {
     const id = req.params.id;
