@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { MongoClient } from "mongodb";
+import { MongoClient,ObjectId } from "mongodb";
 import "dotenv/config";
 
 const PORT = 5000;
@@ -34,9 +34,16 @@ app.get("/events", async (req, res) => {
   res.send(result);
 });
 
+app.get("/events/:id",async(req,res)=>{
+const id= req.params.id;
+console.log(id,"id");
+const result= await eventsCollection.findOne({_id: new ObjectId(id)});
+req.send(result);
+} )
+
 app.get("/", (req, res) => {
   res.send("hello world");
 });
-app.listen(PORT, () => {
+app.listen(PORT, () => {    
   console.log(`server is running on port ${PORT}`);
 });
