@@ -3,25 +3,32 @@ import cors from "cors";
 import { MongoClient, ObjectId } from "mongodb";
 import "dotenv/config";
 
-const PORT = 5000;
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 const client = new MongoClient(process.env.MONGO_URI);
-export async function connectToMongoDB() {
-  try {
+let db, eventsCollection;
+
+async function connectToMongoDB() {
+  if (!db) {
     await client.connect();
+    db = client.db("hand-together");
+    eventsCollection = db.collection("events");
     console.log("You successfully connected to MongoDB!");
-    return client;
-  } catch (err) {
-    console.dir(err);
   }
+  return eventsCollection;
 }
 
-const connectClient = await connectToMongoDB();
-const db = connectClient.db("hand-together");
-const eventsCollection = db.collection("events");
+// Middleware to ensure DB is connected for every request
+app.use(async (req, res, next) => {
+  try {
+    await connectToMongoDB();
+    next();
+  } catch (err) {
+    res.status(500).send({ message: "Database connection failed", error: err.message });
+  }
+});
 
 app.post("/events", async (req, res) => {
   const eventsData = req.body;
@@ -50,11 +57,9 @@ app.get("/events/:id", async (req, res) => {
   }
 });
 
-
 app.get("/", (req, res) => {
   res.send("hello world");
 });
-
 
 app.patch("/events/:id/join", async (req, res) => {
   try {
@@ -72,7 +77,6 @@ app.patch("/events/:id/join", async (req, res) => {
   }
 });
 
-
 app.patch("/events/:id/leave", async (req, res) => {
   try {
     const id = req.params.id;
@@ -89,23 +93,16 @@ app.patch("/events/:id/leave", async (req, res) => {
   }
 });
 
-
 app.get("/events/joined/:email", async (req, res) => {
   try {
     const email = req.params.email;
-
-    
     const result = await eventsCollection.find({ joinedUsers: email }).toArray();
-
     res.send(result);
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`server is running on port ${PORT}`);
-});
 app.put("/events/:id", async (req, res) => {
   try {
     const id = req.params.id;
@@ -128,6 +125,7 @@ app.put("/events/:id", async (req, res) => {
     res.status(500).send({ message: err.message });
   }
 });
+
 app.delete("/events/:id", async (req, res) => {
   try {
     const id = req.params.id;
@@ -140,3 +138,6 @@ app.delete("/events/:id", async (req, res) => {
     res.status(500).send({ message: err.message });
   }
 });
+
+// NOTE: Removed app.listen() and added default export for Vercel
+export default app;
