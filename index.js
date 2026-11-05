@@ -1,11 +1,11 @@
 import express from "express";
 import cors from "cors";
-import { MongoClient,ObjectId } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import "dotenv/config";
 
 const PORT = 5000;
 const app = express();
- app.use(cors());
+app.use(cors());
 app.use(express.json());
 
 const client = new MongoClient(process.env.MONGO_URI);
@@ -34,16 +34,25 @@ app.get("/events", async (req, res) => {
   res.send(result);
 });
 
-app.get("/events/:id",async(req,res)=>{
-const id= req.params.id;
-console.log(id,"id");
-const result= await eventsCollection.findOne({_id: new ObjectId(id)});
-req.send(result);
-} )
+app.get("/events/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).send({ message: "Invalid ID format" });
+    }
+    const result = await eventsCollection.findOne({ _id: new ObjectId(id) });
+    if (!result) {
+      return res.status(404).send({ message: "Event not found" });
+    }
+    res.send(result);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+});
 
 app.get("/", (req, res) => {
   res.send("hello world");
 });
-app.listen(PORT, () => {    
+app.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
 });
