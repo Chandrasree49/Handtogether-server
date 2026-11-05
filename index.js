@@ -50,9 +50,22 @@ app.get("/events/:id", async (req, res) => {
   }
 });
 
+
 app.get("/", (req, res) => {
   res.send("hello world");
 });
 app.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
+});
+app.delete("/events/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).send({ message: "Invalid ID" });
+    }
+    const result = await eventsCollection.deleteOne({ _id: new ObjectId(id) });
+    res.send(result);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
 });
