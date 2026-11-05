@@ -54,6 +54,55 @@ app.get("/events/:id", async (req, res) => {
 app.get("/", (req, res) => {
   res.send("hello world");
 });
+
+
+app.patch("/events/:id/join", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { userEmail } = req.body;
+
+    const result = await eventsCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $addToSet: { joinedUsers: userEmail } } 
+    );
+
+    res.send({ success: true, result });
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+});
+
+
+app.patch("/events/:id/leave", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { userEmail } = req.body;
+
+    const result = await eventsCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $pull: { joinedUsers: userEmail } } 
+    );
+
+    res.send({ success: true, result });
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+});
+
+
+app.get("/events/joined/:email", async (req, res) => {
+  try {
+    const email = req.params.email;
+
+    
+    const result = await eventsCollection.find({ joinedUsers: email }).toArray();
+
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
 });
